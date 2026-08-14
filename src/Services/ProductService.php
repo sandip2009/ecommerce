@@ -98,4 +98,39 @@ class ProductService
 
         return $this->productRepository->create($productData);
     }
+    public function getProduct(int $id): ?array {
+        return $this->productRepository->findById($id);
+    }
+    
+    public function updateProduct(int $id,array $data): ?array {
+        $productData = [
+            'name' => trim($data['name']),
+
+            'description' =>
+                isset($data['description'])
+                    ? trim($data['description'])
+                    : null,
+
+            'price' => round(
+                (float) $data['price'],
+                2
+            ),
+
+            'stock' => (int) $data['stock'],
+
+            'status' => isset($data['status'])
+                ? (int) $data['status']
+                : 1,
+        ];
+
+        return $this->productRepository->update(
+            $id,
+            $productData
+        );
+    }
+
+    public function deleteProduct(int $id): bool {
+        return $this->productRepository->softDelete($id);
+    }
+
 }

@@ -19,4 +19,10 @@ interface ProductRepositoryInterface
         ?float $minPrice = null,
         ?float $maxPrice = null
     ): int;
+
+    public function findById(int $id): ?array;
+
+    public function update(int $id, array $data): ?array;
+
+    public function softDelete(int $id): bool;
 }
