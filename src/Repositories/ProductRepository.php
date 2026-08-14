@@ -238,6 +238,12 @@ class ProductRepository implements ProductRepositoryInterface
     }
 
     public function update(int $id, array $data): ?array {
+        // First check whether product exists
+        $existingProduct = $this->findById($id);
+
+        if ($existingProduct === null) {
+            return null;
+        }
         $sql = "
             UPDATE products
             SET
@@ -276,9 +282,7 @@ class ProductRepository implements ProductRepositoryInterface
             WHERE id = :id
             AND deleted_at IS NULL
         ";
-
         $stmt = $this->pdo->prepare($sql);
-
         $stmt->execute([
             'id' => $id
         ]);

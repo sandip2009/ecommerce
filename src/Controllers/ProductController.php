@@ -123,18 +123,14 @@ class ProductController
     }
 
     public function update(Request $request,int $id): never {
-        $existingProduct = $this->productService
-            ->getProduct($id);
-
+        $existingProduct = $this->productService->getProduct($id);
         if ($existingProduct === null) {
             Response::error(
                 'Product not found.',
                 404
             );
         }
-
         $data = $request->input();
-
         $validator = new Validator();
 
         $validator
