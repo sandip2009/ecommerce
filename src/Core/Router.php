@@ -48,6 +48,18 @@ class Router
         ];
     }
 
+    private function addRoute(
+        string $method,
+        string $uri,
+        callable $handler
+    ): void {
+        $this->routes[] = [
+            'method' => $method,
+            'uri' => $uri,
+            'handler' => $handler,
+        ];
+    }
+
     public function dispatch(Request $request): mixed
     {
         $method = $request->method();
