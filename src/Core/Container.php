@@ -12,17 +12,11 @@ class Container
 
     private array $instances = [];
 
-    public function bind(
-        string $abstract,
-        callable $factory
-    ): void {
+    public function bind(string $abstract, callable $factory): void {
         $this->bindings[$abstract] = $factory;
     }
 
-    public function singleton(
-        string $abstract,
-        callable $factory
-    ): void {
+    public function singleton(string $abstract, callable $factory): void {
         $this->bindings[$abstract] = $factory;
     }
 
@@ -98,10 +92,7 @@ class Container
              *
              * or parameters without a type.
              */
-            if (
-                $type === null ||
-                $type->isBuiltin()
-            ) {
+            if ($type === null || $type->isBuiltin()) {
                 throw new RuntimeException(
                     "Unable to resolve dependency: "
                     . $parameter->getName()

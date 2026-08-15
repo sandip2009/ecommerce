@@ -4,6 +4,7 @@ namespace App\Core;
 
 class Request
 {
+    private array $attributes = [];
     public function method(): string
     {
         return strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
@@ -47,5 +48,23 @@ class Request
         );
 
         return $_SERVER[$header] ?? null;
+    }
+
+    public function bearerToken(): ?string
+    {
+        $header = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+
+        if (!preg_match('/Bearer\s+(.+)/i', $header, $matches)) {
+            return null;
+        }
+        return trim($matches[1]);
+    }
+
+    public function setAttribute(string $key, mixed $value): void {
+        $this->attributes[$key] = $value;
+    }
+
+    public function getAttribute(string $key, mixed $default = null): mixed {
+        return $this->attributes[$key] ?? $default;
     }
 }

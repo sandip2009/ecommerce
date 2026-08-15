@@ -10,6 +10,9 @@ use App\Repositories\ProductRepository;
 
 $container = new Container();
 
+$exceptionHandler = new \App\Core\ExceptionHandler(
+    dirname(__DIR__) . '/storage/logs/app.log'
+);
 $config = require __DIR__ . '/../config/database.php';
 
 /*
@@ -66,8 +69,8 @@ $container->bind(
 | Router
 |--------------------------------------------------------------------------
 */
-
-$router = new Router();
+$exceptionHandler->register();
+$router = new Router($container);
 
 require_once __DIR__ . '/../routes/api.php';
 

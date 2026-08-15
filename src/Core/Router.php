@@ -3,60 +3,40 @@
 namespace App\Core;
 
 use Closure;
+use App\Core\Container;
+use App\Middleware\AuthMiddleware;
+use App\Middleware\RoleMiddleware;
 
 class Router
 {
     private array $routes = [];
-
-    public function get(
-        string $uri,
-        callable|array $handler
-    ): void {
-        $this->add('GET', $uri, $handler);
+    private Container $container;
+    public function __construct(Container $container) {
+        $this->container = $container;
     }
 
-    public function post(
-        string $uri,
-        callable|array $handler
-    ): void {
-        $this->add('POST', $uri, $handler);
+    public function get(string $uri, callable|array $handler, array $middleware = []): void {
+        $this->addRoute('GET', $uri, $handler, $middleware);
     }
 
-    public function put(
-        string $uri,
-        callable|array $handler
-    ): void {
-        $this->add('PUT', $uri, $handler);
+    public function post(string $uri, callable|array $handler, array $middleware = []): void {
+        $this->addRoute('POST', $uri, $handler, $middleware);
     }
 
-    public function delete(
-        string $uri,
-        callable|array $handler
-    ): void {
-        $this->add('DELETE', $uri, $handler);
+    public function put(string $uri, callable|array $handler, array $middleware = []): void {
+        $this->addRoute('PUT', $uri, $handler, $middleware);
     }
 
-    private function add(
-        string $method,
-        string $uri,
-        callable|array $handler
-    ): void {
+    public function delete(string $uri, callable|array $handler, array $middleware = []): void {
+        $this->addRoute('DELETE', $uri, $handler, $middleware);
+    }
+
+    private function addRoute(string $method, string $uri, callable $handler, array $middleware = []): void {
         $this->routes[] = [
             'method' => $method,
             'uri' => $uri,
             'handler' => $handler,
-        ];
-    }
-
-    private function addRoute(
-        string $method,
-        string $uri,
-        callable $handler
-    ): void {
-        $this->routes[] = [
-            'method' => $method,
-            'uri' => $uri,
-            'handler' => $handler,
+            'middleware' => $middleware,
         ];
     }
 
@@ -66,15 +46,17 @@ class Router
         $uri = $request->uri();
 
         foreach ($this->routes as $route) {
-
-            if ($route['method'] !== $method) {
+           if ($route['method'] !== $method) {
                 continue;
             }
-
-            $parameters = $this->matchRoute(
-                $route['uri'],
-                $uri
-            );
+            $parameters = $this->matchRoute($route['uri'],$uri);
+            if ($parameters === null) {
+                continue;
+            }
+            $middlewareResult = $this->runMiddleware($route['middleware'] ?? [],$request);
+            if ($middlewareResult !== true) {
+                return $middlewareResult;
+            }
 
             if ($parameters !== null) {
 
@@ -162,15 +144,34 @@ class Router
         if (!preg_match($pattern, $uri, $matches)) {
             return null;
         }
-
         array_shift($matches);
-
         $parameters = [];
-
         foreach ($parameterNames as $index => $name) {
-            $parameters[$name] =
-                $matches[$index];
+            $parameters[$name] = $matches[$index];
         }
         return $parameters;
+    }
+    private function runMiddleware(array $middlewares, Request $request): mixed {
+        foreach ($middlewares as $middleware) {
+            if ($middleware === 'auth') {
+                $authMiddleware = $this->container->make(AuthMiddleware::class);
+                
+                $user = $authMiddleware->handle($request);
+                if ($user === null) {
+                    return Response::error('Unauthorized.', 401);
+                }
+                $request->setAttribute('user', $user);
+            }
+
+            if ($middleware === 'admin') {
+                $roleMiddleware = $this->container->make(RoleMiddleware::class);
+
+                if (!$roleMiddleware->handle($request, 'admin')) {
+                    return Response::error('Access denied.', 403);
+                }
+            }
+        }
+
+        return true;
     }
 }
