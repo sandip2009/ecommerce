@@ -105,10 +105,7 @@ class Validator
         return $this;
     }
 
-    public function boolean(
-        string $field,
-        mixed $value
-    ): self {
+    public function boolean(string $field, mixed $value): self {
         if (
             $value !== null &&
             !in_array(

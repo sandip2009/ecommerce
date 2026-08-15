@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Interfaces\ProductRepositoryInterface;
+use Throwable;
 
 class ProductService
 {
@@ -76,45 +77,54 @@ class ProductService
 
     public function createProduct(array $data): array
     {
-        $productData = [
-            'name' => trim($data['name']),
-
-            'description' =>
-                isset($data['description'])
-                    ? trim($data['description'])
-                    : null,
-
-            'price' => round(
-                (float) $data['price'],
-                2
-            ),
-
-            'stock' => (int) $data['stock'],
-
-            'status' => isset($data['status'])
-                ? (int) $data['status']
-                : 1,
-        ];
-
-        return $this->productRepository->create($productData);
+        try {
+            $productData = [
+                'name' => trim($data['name']),
+                'description' => isset($data['description']) ? trim($data['description']) : null,
+                'price' => round((float) $data['price'], 2),
+                'stock' => (int) $data['stock'],
+                'status' => isset($data['status'])  ? (int) $data['status'] : 1,
+            ];
+            $this->database->beginTransaction();
+            $product = $this->productRepository->create($productData);
+            // return $this->productRepository->create($productData);
+            $this->database->commit();
+             return $product;
+        } catch (Throwable $exception) {
+            if ($this->database->inTransaction()) {
+                $this->database->rollBack();
+            }
+            throw $exception;
+        }
     }
     public function getProduct(int $id): ?array {
         return $this->productRepository->findById($id);
     }
     
     public function updateProduct(int $id,array $data): ?array {
-        $productData = [
-            'name' => trim($data['name']),
-            'description' =>isset($data['description']) ? trim($data['description']) : null,
-            'price' => round((float) $data['price'],2),
-            'stock' => (int) $data['stock'],
-            'status' => isset($data['status']) ? (int) $data['status'] : 1,
-        ];
-        
-        return $this->productRepository->update(
-            $id,
-            $productData
-        );
+        try {
+            
+            $productData = [
+                'name' => trim($data['name']),
+                'description' =>isset($data['description']) ? trim($data['description']) : null,
+                'price' => round((float) $data['price'],2),
+                'stock' => (int) $data['stock'],
+                'status' => isset($data['status']) ? (int) $data['status'] : 1,
+            ];
+            $this->database->beginTransaction();
+            $product = $this->productRepository->update($id,$productData);
+            if ($product === null) {
+                $this->database->rollBack();
+                return null;
+            }
+            $this->database->commit();
+            return $product;
+        } catch (Throwable $exception) {
+            if ($this->database->inTransaction()) {
+                $this->database->rollBack();
+            }
+            throw $exception;
+        }
     }
 
     public function deleteProduct(int $id): bool {
