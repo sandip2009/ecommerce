@@ -36,4 +36,12 @@ class AuthMiddleware
         }
         return $user;
     }
+
+    public function optional(Request $request): ?array {
+        $token = $request->bearerToken();
+        if (!$token) {
+            return null;
+        }
+        return $this->handle($request);
+    }
 }

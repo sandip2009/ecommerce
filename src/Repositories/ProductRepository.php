@@ -289,5 +289,70 @@ class ProductRepository implements ProductRepositoryInterface
 
         return $stmt->rowCount() > 0;
     }
-    
+
+    public function decreaseStock(int $productId, int $quantity): bool {
+        $sql = "
+            UPDATE products
+            SET stock = stock - :quantity
+            WHERE id = :id
+            AND stock >= :available_quantity
+        ";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([
+            'quantity' => $quantity,
+            'id' => $productId,
+            'available_quantity' => $productId,
+        ]);
+        return $stmt->rowCount() > 0;
+    }
+
+    public function increaseStock(int $productId, int $quantity): bool {
+        $sql = "
+            UPDATE products
+            SET stock = stock + :quantity
+            WHERE id = :id
+        ";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([
+            'quantity' => $quantity,
+            'id' => $productId,
+        ]);
+        return $stmt->rowCount() > 0;
+    }
+
+    public function updateOrderItemStatus(int $orderItemId, int $userId, string $newStatus): array {
+        $this->pdo->beginTransaction();
+
+        try {
+            $orderItem = $this->orderItemRepository->findById($orderItemId);
+            if ($orderItem === null) {
+                throw new RuntimeException('Order item not found.');
+            }
+            if ((int) $orderItem['user_id'] !== $userId) {
+                throw new RuntimeException('You are not allowed to update this order item.');
+            }
+            $currentStatus = $orderItem['status'];
+            $this->validateItemStatusTransition($currentStatus,$newStatus);
+            if ($newStatus === 'cancelled') {
+                $updated = $this->productRepository->increaseStock((int) $orderItem['product_id'],(int) $orderItem['quantity']);
+                if (!$updated) {
+                    throw new RuntimeException('Unable to restore product stock.');
+                }
+                $updated = $this->orderItemRepository->cancel($orderItemId,'Cancelled by customer.');
+            } else {
+                $updated = $this->orderItemRepository->updateStatus($orderItemId,$newStatus);
+            }
+            if (!$updated) {
+                throw new RuntimeException('Unable to update order item status.');
+            }
+            $this->syncOrderStatus((int) $orderItem['order_id']);
+            $this->pdo->commit();
+            return $this->orderItemRepository->findById($orderItemId);
+        } catch (\Throwable $e) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            throw $e;
+        }
+    }
 }

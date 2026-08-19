@@ -163,6 +163,14 @@ class Router
                 $request->setAttribute('user', $user);
             }
 
+            if ($middleware === 'optional_auth') {
+                $authMiddleware = $this->container->make(AuthMiddleware::class);
+                $user = $authMiddleware->optional($request);
+                if ($user !== null) {
+                    $request->setAttribute('user',$user);
+                }
+            }
+
             if ($middleware === 'admin') {
                 $roleMiddleware = $this->container->make(RoleMiddleware::class);
 

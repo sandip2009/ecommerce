@@ -68,6 +68,7 @@ class TokenRepository
                 api_tokens.user_id,
                 api_tokens.token_hash,
                 api_tokens.expires_at,
+                users.id,
                 users.name,
                 users.email,
                 users.role

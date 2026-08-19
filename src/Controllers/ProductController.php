@@ -27,8 +27,7 @@ class ProductController
             'order' => $request->query('order', 'desc'),
         ];
 
-        $result = $this->productService
-            ->getProducts($filters);
+        $result = $this->productService->getProducts($filters);
         // Response::success() is declared as never and terminates execution.
         Response::success(
             $result,

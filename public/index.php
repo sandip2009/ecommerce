@@ -8,7 +8,9 @@ use App\Core\Router;
 use App\Interfaces\ProductRepositoryInterface;
 use App\Repositories\ProductRepository;
 
+
 $container = new Container();
+$session = new \App\Core\Session();
 
 $exceptionHandler = new \App\Core\ExceptionHandler(
     dirname(__DIR__) . '/storage/logs/app.log'
@@ -20,7 +22,7 @@ $config = require __DIR__ . '/../config/database.php';
 | PDO
 |--------------------------------------------------------------------------
 */
-
+$session->start();
 $container->singleton(
     \PDO::class,
     function () use ($config) {

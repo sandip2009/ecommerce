@@ -4,12 +4,14 @@ namespace App\Services;
 
 use App\Repositories\UserRepository;
 use App\Repositories\TokenRepository;
+use App\Services\CartService;
 
 class AuthService
 {
     public function __construct(
         private UserRepository $userRepository,
-        private TokenRepository $tokenRepository
+        private TokenRepository $tokenRepository,
+        private CartService $cartService
     ) {}
 
     public function registerCustomer(array $data): array {
@@ -51,6 +53,7 @@ class AuthService
         $tokenHash = hash('sha256',$token);
         $expiresAt = date('Y-m-d H:i:s', strtotime('+24 hours'));
         $this->tokenRepository->create((int) $user['id'], $tokenHash, $expiresAt);
+        $this->cartService->mergeGuestCart((int) $user['id']);
         return [
             'user' => [
                 'id' => $user['id'],
